@@ -8,6 +8,7 @@ dependencies = [
     "dotenv>=0.9.9",
     "fastapi>=0.121.2",
     "langchain>=1.0.7",
+    "langchain-google-community>=3.0.4",
     "langchain-openai>=1.1.7",
     "langgraph>=1.0.3",
     "logging>=0.4.9.6",

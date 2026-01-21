@@ -1,3 +1,27 @@
 models:
   base_model: "gpt-4"
   base_temperature: 0.7
+  QueryPlanner:
+    model: "gpt-4o"
+    temperature: 0.5
+tools:
+  websearch:
+    max_results: 5
+    timeout: 30
+    rate_limit_delay: 1.0
+prompts:
+  QueryPlanner: |
+    You are an expert at creating structured query plans for searching local services based on user requirements.
+
+    Please construct a detailed ServiceSearchRequest using the following parameters given to you:
+
+    - Service Type: {service_type}
+    - Location City: {location_city}
+    - Location Area: {location_area}
+    - Urgency Level: {urgency}
+    - Budget Level: {budget}
+    - Additional Details: {additional_details}
+
+    Ensure that your output adheres to the ServiceSearchRequest schema, presenting a clear and organized structure with all the necessary parameters to effectively search for local services.
+
+    Generate the ServiceSearchRequest based on these inputs.

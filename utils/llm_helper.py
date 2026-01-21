@@ -15,6 +15,16 @@ def call_llm(temperature: Optional[str] = None,
     return llm
 
 def call_structured_llm(outputschema,
+                       temperature: Optional[str] = None,
+                       model: Optional[str] = None):
+    model = model or DEFAULT_MODEL
+    temperature = temperature or DEFAULT_TEMP
+    
+    llm = ChatOpenAI(model= model, temperature= temperature, api_key= api_key)
+    structured_llm = llm.with_structured_output(schema = outputschema)
+    return structured_llm
+
+def call_agent(outputschema,
                         temperature: Optional[str] = None,
                         tools: Optional[str] = None,
                         model: Optional[str] = None):

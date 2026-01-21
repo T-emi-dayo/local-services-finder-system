@@ -22,6 +22,17 @@ class Config:
     # ============ GENERAL CONFIG ============
     BASE_MODEL = _config["models"]['base_model']
     BASE_TEMPERATURE = _config["models"]['base_temperature']
+    
+    QUERY_MODEL = _config["models"]['QueryPlanner']['model']
+    QUERY_TEMP = _config["models"]['QueryPlanner']['temperature']
+    
+    # ============ TOOLS ============
+    WS_MAX_RESULTS = _config["tools"]['websearch']['max_results']
+    WS_TIMEOUT = _config["tools"]['websearch']['timeout']   
+    WS_RATE_LIMIT_DELAY = _config["tools"]['websearch']['rate_limit_delay']
+    
+    # ============ PROMPTS ============
+    QUERY_PLANNER_PROMPT = _config["prompts"]['QueryPlanner']
         
     # ============ VALIDATION ============
     @classmethod
@@ -40,7 +51,6 @@ class Config:
             raise ValueError(f"❌ Missing required secrets in .env: {missing}")
         
         print("✅ All configuration loaded successfully!")
-        print(f"   Model: {cls.BASE_MODEL}")
 
 
 # Validate on import
