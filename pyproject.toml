@@ -5,8 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "beautifulsoup4>=4.14.3",
+    "bs4>=0.0.2",
     "dotenv>=0.9.9",
     "fastapi>=0.121.2",
+    "geopy>=2.4.1",
+    "googlemaps>=4.10.0",
     "langchain>=1.0.7",
     "langchain-google-community>=3.0.4",
     "langchain-openai>=1.1.7",
@@ -14,5 +18,6 @@ dependencies = [
     "logging>=0.4.9.6",
     "pydantic>=2.12.4",
     "requests>=2.32.5",
+    "selenium>=4.40.0",
     "sqlalchemy>=2.0.44",
 ]

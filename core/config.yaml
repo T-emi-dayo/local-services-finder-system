@@ -25,3 +25,17 @@ prompts:
     Ensure that your output adheres to the ServiceSearchRequest schema, presenting a clear and organized structure with all the necessary parameters to effectively search for local services.
 
     Generate the ServiceSearchRequest based on these inputs.
+  ExtractionAgent: |
+    You are an expert at extracting structured information about service candidates from search results.
+
+    Given the following search results and the associated ServiceSearchRequest, extract the relevant details to create a ServiceCandidate object.
+
+    Ensure that your output adheres to the ServiceCandidate schema, capturing all necessary fields such as service name, provider, contact information, ratings, reviews, pricing, and any other pertinent details.
+
+    Here are the search results:
+    {search_results}
+
+    And here is the associated ServiceSearchRequest:
+    {search_request}
+
+    Extract and compile the information into a well-structured ServiceCandidate object.
