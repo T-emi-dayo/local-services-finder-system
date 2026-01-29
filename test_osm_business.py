@@ -2,23 +2,12 @@
 # Quick test script for the search_nigerian_businesses_osm tool.
 # Assumes the main module is in the same directory or properly importable.
 
-from src.tools.osm_tool import search_nigerian_businesses_osm  # Replace 'your_module_name' with the actual filename (e.g., 'osm_business_searcher')
+from src.tools.review_checking_tool import get_business_reviews
 
-# Sample inputs
-service = "pharmacy"
-location = "Ikeja, Lagos"
-radius_km = 5.0
-limit = 10
-contact_email = "you@example.com"  # Optional
+# Example usage:
+# Replace with actual query and location for testing
+query = "0x8082e850673ab39f:0xfd6d3b4bb1dd08aa"
+result = get_business_reviews(query)
 
-# Call the function
-result = search_nigerian_businesses_osm(
-    service=service,
-    location=location,
-    radius_km=radius_km,
-    limit=limit,
-    contact_email=contact_email,
-)
-
-# Print the result (for quick inspection)
+# Print the result
 print(result)

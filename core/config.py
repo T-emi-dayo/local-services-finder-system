@@ -8,6 +8,7 @@ class Config:
     "Configuration loader"
     # ============ SECRETS FROM .ENV ============
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+    RAPID_API_KEY = os.getenv('RAPID_API_KEY')
 
     # ============ LOAD YAML CONFIG ============
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

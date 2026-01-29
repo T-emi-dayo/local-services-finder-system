@@ -40,13 +40,5 @@ prompts:
       - Pricing
       - Additional pertinent details
 
-    Here are the specifics for processing the task:
-    - Service Type: {service_type}
-    - Location City: {location_city}
-    - Location Area: {location_area}
-    - Urgency Level: {urgency}
-    - Budget Level: {budget}
-    - Additional Details: {additional_details}
-
     After gathering the necessary information, compile it into a well-structured ServiceCandidate object based on the schema provided.
     Your final output should be a complete ServiceCandidate object that accurately reflects the information gathered through your tool usage.
