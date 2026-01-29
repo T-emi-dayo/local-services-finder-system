@@ -1,6 +1,7 @@
 import os
 from typing import List, Dict, Optional
 from pydantic import BaseModel
+from langchain.tools import tool
 
 try:
     import googlemaps
@@ -171,6 +172,7 @@ class IntelligentMapSearch:
             )]
 
 # Convenience function alias for easy agent use
+@ tool
 def search_location(query: str, api_key: Optional[str] = None, max_results: int = 5) -> List[ToolResult]:
     """
     Standalone convenience function. Initializes the tool and performs search.

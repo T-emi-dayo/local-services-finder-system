@@ -1,4 +1,5 @@
 from src.agent.nodes.QueryPlanner import plan_query
+from src.agent.nodes.ExtractionAgent import extract_information
 
 from src.models.FormConfig import FormConfig
 from src.agent.state import AgentState
@@ -16,9 +17,9 @@ test_config = FormConfig(
 agentstate = AgentState(
     config= test_config,
     candidates = [],
-    searchplan_history = [],
-    current_searchplan = "",
+    search_history = [],
 )
 
-answer = plan_query(agentstate)
-print("Planned Query:", answer)
+
+candidates = extract_information(agentstate)
+print("Extracted Candidates:", candidates)

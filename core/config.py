@@ -33,6 +33,7 @@ class Config:
     
     # ============ PROMPTS ============
     QUERY_PLANNER_PROMPT = _config["prompts"]['QueryPlanner']
+    EXTRACTION_PROMPT = _config["prompts"]['ExtractionAgent']
         
     # ============ VALIDATION ============
     @classmethod

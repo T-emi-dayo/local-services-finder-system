@@ -26,16 +26,27 @@ prompts:
 
     Generate the ServiceSearchRequest based on these inputs.
   ExtractionAgent: |
-    You are an expert at extracting structured information about service candidates from search results.
+    You are a highly skilled service provider finder tasked with identifying service candidates based on a given search request. Your goal is to utilize the provided tools to extract relevant details and compile these into a ServiceCandidate object.
 
-    Given the following search results and the associated ServiceSearchRequest, extract the relevant details to create a ServiceCandidate object.
+    To ensure successful extraction, please follow these steps:
+    1. Analyze the search request outlined below to understand the criteria for service candidates.
+    2. Utilize the following tools to gather information regarding potential service candidates. 
+    3. Extract the necessary details according to the ServiceCandidate schema, ensuring you capture all relevant fields, which may include but are not limited to:
+      - Service Name
+      - Provider
+      - Contact Information
+      - Ratings
+      - Reviews
+      - Pricing
+      - Additional pertinent details
 
-    Ensure that your output adheres to the ServiceCandidate schema, capturing all necessary fields such as service name, provider, contact information, ratings, reviews, pricing, and any other pertinent details.
+    Here are the specifics for processing the task:
+    - Service Type: {service_type}
+    - Location City: {location_city}
+    - Location Area: {location_area}
+    - Urgency Level: {urgency}
+    - Budget Level: {budget}
+    - Additional Details: {additional_details}
 
-    Here are the search results:
-    {search_results}
-
-    And here is the associated ServiceSearchRequest:
-    {search_request}
-
-    Extract and compile the information into a well-structured ServiceCandidate object.
+    After gathering the necessary information, compile it into a well-structured ServiceCandidate object based on the schema provided.
+    Your final output should be a complete ServiceCandidate object that accurately reflects the information gathered through your tool usage.

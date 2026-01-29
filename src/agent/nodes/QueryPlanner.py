@@ -28,7 +28,7 @@ def plan_query(state: AgentState) -> ServiceSearchRequest:
     
     response = llm.invoke(prompt)
     
-    state.searchplan_history.append(state.searchplan)
-    state.searchplan = response
+    state.searchplan_history.append(state.current_searchplan)
+    state.current_searchplan = response
     
     return state
