@@ -21,8 +21,8 @@ from src.agent.state import AgentState
 tools = [
     search_web,
     get_current_time_api,
-    search_local_businesses,
     search_location,
+    search_local_businesses,
     get_business_details,
     get_business_reviews
 ]
@@ -31,13 +31,13 @@ llm = call_llm( model= Config.BASE_MODEL, temperature=Config.BASE_TEMPERATURE)
 
 prompt = Config.EXTRACTION_PROMPT
 
-agent = create_agent(model= "gpt-4o",
+agent = create_agent(model= Config.EXTRACTION_MODEL,
                      system_prompt =prompt,
                      tools=tools,
                      response_format= ServiceCandidate,
                      debug= True)
 
-def extract_information(state: AgentState):
+def service_agent(state: AgentState) -> AgentState:
     config = state.config
     
     input_data = {
@@ -51,10 +51,9 @@ def extract_information(state: AgentState):
 
     try:
         response = agent.invoke({"messages": [{"role": "user", "content": "I need to extract service candidate information based on the following details: " + str(input_data)}]})
-        output = response.get("output")
 
-        state.candidates.append(output)
-        return output
+        state.candidates_search_history.append(response)
+        return state
 
     except Exception as e:
         print(f"Error during agent execution: {e}")

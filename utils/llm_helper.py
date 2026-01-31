@@ -38,3 +38,16 @@ def call_agent(outputschema,
         strict=True,)
     
     return structured_llm
+
+def generate_text_response(prompt: str,
+                           outputschema: str,
+                           temperature: Optional[str] = None,
+                           model: Optional[str] = None):
+    model = model or DEFAULT_MODEL
+    temperature = temperature or DEFAULT_TEMP
+    llm = ChatOpenAI(model= model, temperature= temperature, api_key= api_key)
+    structured_llm = llm.with_structured_output(schema = outputschema)
+    response = structured_llm.invoke(prompt)
+    # text = response.content
+    
+    return response

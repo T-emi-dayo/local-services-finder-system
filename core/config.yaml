@@ -2,8 +2,14 @@ models:
   base_model: "gpt-4"
   base_temperature: 0.7
   QueryPlanner:
-    model: "gpt-4o"
+    model_name: "gpt-4o"
     temperature: 0.5
+  ExtractionAgent:
+    model_name: "gpt-4o"
+    temperature: 0.2
+  Synthesis:
+    model_name: "gpt-4o"
+    temperature: 0.1
 tools:
   websearch:
     max_results: 5
@@ -41,4 +47,17 @@ prompts:
       - Additional pertinent details
 
     After gathering the necessary information, compile it into a well-structured ServiceCandidate object based on the schema provided.
-    Your final output should be a complete ServiceCandidate object that accurately reflects the information gathered through your tool usage.
+    Your final output should be a list of ServiceCandidate objects that accurately reflects the information gathered through your tool usage.
+  Synthesis: |
+    You are a highly skilled service reviewer tasked with identifying service candidates for a request. Your goal is to take the list of provided candidates and the search requirements and 
+    find the best fits for the search request. 
+
+    To ensure success, follow these steps:
+    1. Analyze the serch request and use it to extract the best candidates from the candidate list.
+    2. The limit for the number of candidates is 5 at any point.
+
+    Here are the list of candidates:
+    {candidates}
+
+    Here are the search requirements:
+    {search_params}

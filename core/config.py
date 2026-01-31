@@ -24,8 +24,14 @@ class Config:
     BASE_MODEL = _config["models"]['base_model']
     BASE_TEMPERATURE = _config["models"]['base_temperature']
     
-    QUERY_MODEL = _config["models"]['QueryPlanner']['model']
+    QUERY_MODEL = _config["models"]['QueryPlanner']['model_name']
     QUERY_TEMP = _config["models"]['QueryPlanner']['temperature']
+    
+    EXTRACTION_MODEL = _config["models"]["ExtractionAgent"]["model_name"]
+    EXTRACTION_TEMP = _config["models"]["ExtractionAgent"]["temperature"]
+    
+    SYNTHESIS_MODEL = _config["models"]["Synthesis"]["model_name"]
+    SYNTHESIS_TEMP = _config["models"]["Synthesis"]["temperature"]
     
     # ============ TOOLS ============
     WS_MAX_RESULTS = _config["tools"]['websearch']['max_results']
@@ -35,6 +41,7 @@ class Config:
     # ============ PROMPTS ============
     QUERY_PLANNER_PROMPT = _config["prompts"]['QueryPlanner']
     EXTRACTION_PROMPT = _config["prompts"]['ExtractionAgent']
+    SYNTHESIS_PROMPT = _config['prompts']['Synthesis']
         
     # ============ VALIDATION ============
     @classmethod
