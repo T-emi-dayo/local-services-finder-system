@@ -20,7 +20,7 @@ def synthesize(state: AgentState) -> AgentState:
                                       prompt= prompt,
                                       outputschema= FinalResponse)
     
-    state.final_response = response.candidates
+    state.final_candidates = response.candidates
     state.summary = response.summary
     
     return state

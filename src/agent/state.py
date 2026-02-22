@@ -6,9 +6,9 @@ from src.models.FormConfig import FormConfig
 from src.models.CandidateSchema import ServiceCandidate
 
 class AgentState(BaseModel):
-    config : FormConfig
-    candidates_search_history: list[ServiceCandidate]
-    message_history: list[HumanMessage]
-    sources: list[str]
-    final_response: list[ServiceCandidate]
-    summary: str
+    config : FormConfig = Field(description="The form configuration containing user input and query parameters.")
+    candidates_search_history: list[ServiceCandidate] = Field(description="List of service candidates discovered during the search.")
+    message_history: list[HumanMessage] = Field(description="Conversation history containing all user messages and interactions.")
+    sources: list[str] = Field(description="List of sources (URLs/references) from which information was retrieved.")
+    final_candidates: list[ServiceCandidate] = Field(default=None, description="The final list of candidates selected by the agent.")
+    summary: str = Field(description="Summary of the search results and findings.")

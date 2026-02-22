@@ -111,9 +111,9 @@ class LSFAgent:
         
         # Format output
         output = {
-            "final_response": final_state.get("final_answer", ""),
-            "metadata": final_state.get("metadata", {}),
+            "final_candidates": final_state.get("final_candidates", []),
             "sources": final_state.get("sources", []),
+            "summary": final_state.get("summary", ""),
             "state": final_state,
         }
         
