@@ -8,4 +8,6 @@ class FormConfig(BaseModel):
     location_area : str # (e.g., “Ikeja”, "Gwarimpa", “Yaba”, “Victoria Island”)
     urgency : Literal["IMMEDIATELY", "TODAY", "THIS_WEEK", "NOT_URGENT"]
     budget : Literal["LOW", "MEDIUM", "HIGH", "NO_BUDGET"]
+        # On the price, the idea of a price field is vague. Either explore the idea of a numerical price range or remove it all together.
+
     additional_details: str = None  # (Optional additional details about the service request)

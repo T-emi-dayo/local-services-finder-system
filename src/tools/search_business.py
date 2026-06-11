@@ -11,7 +11,7 @@ RAPIDAPI_KEY = Config.RAPID_API_KEY
 BASE_URL = f"https://{RAPIDAPI_HOST}/search"
 
 # Function to fetch business details using Local Business Search API
-@tool
+# @tool
 def search_local_businesses(
     query: str,
     limit: int = 20,

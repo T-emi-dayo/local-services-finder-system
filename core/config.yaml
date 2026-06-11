@@ -1,15 +1,15 @@
 models:
-  base_model: "gpt-4"
-  base_temperature: 0.7
+  base_model: "gpt-4o-mini"
+  base_temperature: 0.3
   QueryPlanner:
-    model_name: "gpt-4o"
+    model_name: "gpt-4o-mini"
     temperature: 0.5
   ExtractionAgent:
-    model_name: "gpt-4o"
+    model_name: "gpt-4o-mini"
     temperature: 0.2
   Synthesis:
-    model_name: "gpt-4o"
-    temperature: 0.1
+    model_name: "gpt-4o-mini"
+    temperature: 0.3
 tools:
   websearch:
     max_results: 5
@@ -32,29 +32,24 @@ prompts:
 
     Generate the ServiceSearchRequest based on these inputs.
   ExtractionAgent: |
-    You are a highly skilled service provider finder tasked with identifying service candidates based on a given search request. Your goal is to utilize the provided tools to extract relevant details and compile these into a ServiceCandidate object.
+    You are a highly skilled service provider finder tasked with identifying service candidates based on a given search request.
+    Your goal is to utilize the provided tools to extract relevant details and compile these into a ServiceCandidate object.
 
     To ensure successful extraction, please follow these steps:
     1. Analyze the search request outlined below to understand the criteria for service candidates.
     2. Utilize the following tools to gather information regarding potential service candidates. 
-    3. Extract the necessary details according to the ServiceCandidate schema, ensuring you capture all relevant fields, which may include but are not limited to:
-      - Service Name
-      - Provider
-      - Contact Information
-      - Ratings
-      - Reviews
-      - Pricing
-      - Additional pertinent details
+    3. Extract the necessary details according to the ServiceCandidate schema.
 
-    After gathering the necessary information, compile it into a well-structured ServiceCandidate object based on the schema provided.
     Your final output should be a list of ServiceCandidate objects that accurately reflects the information gathered through your tool usage.
+    You cna only use tools 3 times. The limit of providers you can gather is 10.  Do not exceed your limits.
+    Return a valid JSON response that adheres to the ServiceCandidate schema for each candidate you identify.
   Synthesis: |
     You are a highly skilled service reviewer tasked with identifying service candidates for a request. Your goal is to take the list of provided candidates and the search requirements and 
     find the best fits for the search request. 
 
     To ensure success, follow these steps:
     1. Analyze the serch request and use it to extract the best candidates from the candidate list.
-    2. The limit for the number of candidates is 5 at any point.
+    2. The limit for the number of candidates is 3 at any point.
 
     Here are the list of candidates:
     {candidates}

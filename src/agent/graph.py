@@ -1,136 +1,91 @@
 """
-LangGraph Assembly - Simplified Security Agent
+Local Services Finder - Agent Graph
 
-A streamlined security agent for multiagent systems.
-Receives question, hypothesis, geo_focus, and time_horizon from config.
-Executes via ReAct agent with tools, returns final_answer, sources, and metadata.
+Flow:
+  resolve_intent → orchestrate_tools → [cleanup →] rank_and_synthesize → END
+
+Conditional edge after orchestrate_tools:
+  synthesis_reason == "not_found" → skip cleanup, go straight to rank_and_synthesize
+  otherwise                       → cleanup → rank_and_synthesize
+
+All nodes catch their own exceptions and set synthesis_reason accordingly,
+so rank_and_synthesize always executes and always returns a meaningful response.
 """
 
 import logging
 from typing import Any, Dict
-from langchain_core.messages import HumanMessage
+
 from langgraph.graph import StateGraph, END
 
-# Import your custom models
-from src.models.FormConfig import FormConfig
-from src.agent.nodes.ExtractionAgent import service_agent
-from src.agent.nodes.SynthesisNode import synthesize
 from src.agent.state import AgentState
+from src.agent.nodes.IntentResolutionNode import resolve_intent
+from src.agent.nodes.ToolOrchestrationNode import orchestrate_tools
+from src.agent.nodes.CleanupNode import cleanup
+from src.agent.nodes.RankingSynthesisNode import rank_and_synthesize
+from src.models.FormConfig import FormConfig
 
 logger = logging.getLogger(__name__)
 
-# ============================================================================
-# GRAPH BUILDER
-# ============================================================================
 
-def build_lsf_agent_graph() -> StateGraph:
-    """
-    Build the LSF agent graph.
-    
-    Returns:
-        Compiled LangGraph StateGraph
-    """
-    
-    logger.info("Building LSF Agent Graph")
-    
-    # Create graph
+def _route_after_tools(state: AgentState) -> str:
+    reason = state.synthesis_reason
+    if reason == "not_found":
+        logger.info("ROUTE | orchestrate_tools -> rank_and_synthesize (no candidates found)")
+        return "rank_and_synthesize"
+    logger.info("ROUTE | orchestrate_tools -> cleanup")
+    return "cleanup"
+
+
+def build_graph() -> StateGraph:
     graph = StateGraph(AgentState)
-    
-    # Add nodes
-    logger.info("   Adding agent node...")
-    graph.add_node("agent", service_agent)
-    graph.add_node("synthesis", synthesize)
-    
-    # Add edges
-    logger.info("   Adding edges...")
-    graph.set_entry_point("agent")
-    graph.add_edge("agent", "synthesis")
-    graph.add_edge("synthesis", END)
-    
-    # Compile graph
-    logger.info("   Compiling graph...")
-    compiled_graph = graph.compile()
-    
-    logger.info("[OK] Graph built successfully!")
-    
-    return compiled_graph
 
-# ============================================================================
-# AGENT RUNNER
-# ============================================================================
+    graph.add_node("resolve_intent", resolve_intent)
+    graph.add_node("orchestrate_tools", orchestrate_tools)
+    graph.add_node("cleanup", cleanup)
+    graph.add_node("rank_and_synthesize", rank_and_synthesize)
+
+    graph.set_entry_point("resolve_intent")
+    graph.add_edge("resolve_intent", "orchestrate_tools")
+    graph.add_conditional_edges(
+        "orchestrate_tools",
+        _route_after_tools,
+        {"cleanup": "cleanup", "rank_and_synthesize": "rank_and_synthesize"},
+    )
+    graph.add_edge("cleanup", "rank_and_synthesize")
+    graph.add_edge("rank_and_synthesize", END)
+
+    return graph.compile()
+
 
 class LSFAgent:
-    """
-    LSF Agent - Main interface.
-    
-    Handles graph execution and output formatting.
-    """
-    
     def __init__(self):
-        logger.info("Initializing Finance Agent...")
-        self.graph = build_lsf_agent_graph()
-        logger.info("[OK] LSFAgent ready")
-    
+        logger.info("Initializing LSF Agent...")
+        self.graph = build_graph()
+        logger.info("LSF Agent ready")
+
     def run(self, config: FormConfig) -> Dict[str, Any]:
-        """
-        Run the agent with the given config.
-        
-        Args:
-            config: LSF AgentConfig with question, hypothesis, geo_focus, time_horizon.
-        
-        Returns:
-            Dictionary with final_answer, metadata, sources, and state.
-        """
-        
-        logger.info(f"[SEARCH] Running FinanceAgent")
-        logger.info(f"   Service: {config.service_type}")
-        logger.info(f"   Location City: {config.location_city}")
-        logger.info(f"   Location Area: {config.location_area}")
-        logger.info(f"   Urgency: {config.urgency}")
-        logger.info(f"   Budget: {config.budget}")
-        logger.info(f"   Additional Details: {config.additional_details}")
-        
-        # Initialize simplified state
-        initial_state = {
-            "config": config,
-            "candidates_search_history": [],
-            "message_history": [],
-            "sources": [],
-            "final_response": [],
-            "summary": "",
-    }
-        
-        # Run graph
+        logger.info("=" * 60)
+        logger.info("GRAPH | Starting LSF Agent run")
+        logger.info(f"  service='{config.service_type}' | city='{config.location_city}' | area='{config.location_area}'")
+        initial_state = AgentState(config=config)
+
         try:
-            logger.info("Executing graph...")
-            final_state = self.graph.invoke(initial_state)
-            logger.info("[OK] Graph execution complete")
+            final_state: dict = self.graph.invoke(initial_state.model_dump())
         except Exception as e:
-            logger.error(f"[ERROR] Graph execution failed: {e}", exc_info=True)
+            logger.error(f"GRAPH | Run failed: {e}", exc_info=True)
             raise
-        
-        # Format output
-        output = {
-            "final_candidates": final_state.get("final_candidates", []),
-            "sources": final_state.get("sources", []),
+
+        candidates = final_state.get("final_candidates", [])
+        logger.info("=" * 60)
+        logger.info(f"GRAPH | Run complete — {len(candidates)} final candidate(s) returned")
+        logger.info("=" * 60)
+
+        return {
+            "final_candidates": candidates,
             "summary": final_state.get("summary", ""),
-            "state": final_state,
+            "sources": final_state.get("sources", []),
         }
-        
-        logger.info(f"[OK] Agent run complete")
-        return output
 
-# ============================================================================
-# CONVENIENCE FUNCTION
-# ============================================================================
 
-def run_agent(config = FormConfig) -> Dict[str, Any]:
-    """
-    Convenience function to run the finance agent.
-    
-    Returns:
-        Agent final response.
-    """
-    
-    agent = LSFAgent()
-    return agent.run(config)
+def run_agent(config: FormConfig) -> Dict[str, Any]:
+    return LSFAgent().run(config)
