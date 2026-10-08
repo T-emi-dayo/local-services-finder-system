@@ -1,14 +1,14 @@
 # Local Services Finder — Architecture & Design (v2)
 
-> **Last updated:** 2026-04-13
-> **Status:** Core architecture implemented. Tool normalisation in progress (pending real API output inspection via test_tools.py).
+> **Last updated:** 2026-10-08
+> **Status:** Core pipeline implemented end to end (FastAPI backend, frontend, LangGraph agent). Remaining work is tracked in sections 9 and 10.
 
 ---
 
 ## 1. Product Definition
 
 ### 1.1 What the system is
-An AI-first local services discovery system for the Nigerian market. It accepts a structured user request and uses a deterministic multi-node pipeline to find, validate, and rank local service providers — returning the top 3 as contact-ready results.
+An AI-first local services discovery system for the Nigerian market. It accepts a structured user request and uses a deterministic multi-node pipeline to find, validate, and rank local service providers — returning the top-ranked providers as contact-ready results.
 
 ### 1.2 What the system is not
 - Not a generic chatbot.
@@ -16,7 +16,7 @@ An AI-first local services discovery system for the Nigerian market. It accepts 
 - Not a CRM or marketplace.
 
 ### 1.3 Core outputs
-- Up to **3** ranked provider recommendations (fewer if scarcity).
+- Up to **10** ranked provider recommendations (`TOP_N` in `RankingSynthesisNode`; fewer if scarcity).
 - Each result includes: name, phones, location, service tags, price signal, and a ranked evidence note explaining why the provider was selected.
 - If no valid providers are found, a contextual no-result message with a reason.
 
@@ -69,10 +69,10 @@ FormConfig
 │                                          │
 │  Tier 1 — Discovery:                     │
 │    search_local_businesses               │
-│    → quality gate                        │
-│    → fallback (wider params) if needed   │
+│    → target gate (10 candidates)         │
+│    → fallback search, then relaxed search│
 │                                          │
-│  Tier 2 — Enrichment (per candidate):    │
+│  Tier 2 — Enrichment (best 5):           │
 │    get_business_details  (by business_id)│
 │    get_business_reviews  (by business_id)│
 └──────────────────┬───────────────────────┘
@@ -83,7 +83,7 @@ FormConfig
 ┌──────────────────────────────────────────┐           │
 │  Node 4: Cleanup                         │  Mixed    │
 │                                          │           │
-│  1. Completeness filter (programmatic)   │           │
+│  1. Completeness ranking (programmatic)  │           │
 │  2. Logical validation (LLM)            │           │
 │  3. Semantic deduplication (LLM)        │           │
 └──────────────────┬───────────────────────┘           │
@@ -97,7 +97,7 @@ FormConfig
 │  If candidates present:                                  │
 │    Rank by explicit criteria                             │
 │    Ranking rationale → per-candidate evidence text       │
-│    Return top 3                                          │
+│    Return top 10                                         │
 │                                                          │
 │  If no candidates (any reason):                          │
 │    Return contextual no-result message                   │
@@ -144,29 +144,33 @@ class IntentAndSearchParams(BaseModel):
 
 ### 5.2 Node 3 — Tool Orchestration
 
-**Active tools:**
+**Active tools** (RapidAPI Local Business Search, `region="ng"`):
 | Tool | Tier | Input | Purpose |
 |---|---|---|---|
 | `search_local_businesses` | 1 | query, lat, lng, subtypes | Candidate discovery |
 | `get_business_details` | 2 | business_id | Contact + category enrichment |
 | `get_business_reviews` | 2 | business_id | Review snippet enrichment |
 
-**Deferred:** `map_search_tool` — integration planned as a future improvement.
-**Removed:** `web_search_tool`, `web_scrapping_tool`, `current_time_tool` — not applicable to structured tool orchestration.
+**Not used by the graph:** `map_search_tool`, `web_search_tool`, `web_scrapping_tool`, `current_time_tool` exist in `src/tools/` but are not wired in.
+
+**Constants:** `TARGET_CANDIDATES = 10`, `ENRICH_LIMIT = 5`.
 
 **Tier 1 flow:**
-1. Run `search_local_businesses` with primary params
-2. Check quality gate: `>= 5 candidates with completeness_score >= 2`
-3. If gate fails: rerun with fallback params, merge results
-4. Proceed with whatever exists after one fallback attempt (no further retries)
+1. Run `search_local_businesses` with the primary query and subtypes
+2. If fewer than `TARGET_CANDIDATES` candidates: run a fallback search and merge (deduplicated by name)
+3. If still below target: run a relaxed search (query only, no subtypes or coordinates) and merge
+4. Proceed with whatever exists after these attempts
 5. If 0 candidates: set `synthesis_reason = "not_found"`, exit early
+6. Keep the best `ENRICH_LIMIT` candidates, sorted by completeness score, then rating
 
 **Tier 2 flow:**
-- For each candidate that has a `business_id`, call `get_business_details` then `get_business_reviews`
-- Update the `RawCandidate` in place with enriched data
+- For each kept candidate that has a `business_id`, call `get_business_details` (phone, email, address, subtypes, price level mapped to `price_signal`) then `get_business_reviews` (up to 3 review snippets joined into `reviews_summary`)
+- Update the `RawCandidate` in place; each enrichment call fails independently with a warning
 - Candidates without a `business_id` skip Tier 2 and proceed to cleanup as-is
 
-**Normalization:** Every tool response is immediately mapped to `RawCandidate` before any further processing. Enrichment updates the same instance.
+**Known issues in the current code:**
+- The `lat`/`lng` arguments are commented out in the primary and fallback searches, so results are not biased to the target area.
+- The fallback search uses a hardcoded query (`"Electrician, Lagos"`) instead of `intent.fallback_query`.
 
 ---
 
@@ -174,11 +178,11 @@ class IntentAndSearchParams(BaseModel):
 
 Three sequential steps. Each reduces noise before the next runs, minimising LLM token cost.
 
-| Step | Method | Drops candidates if |
+| Step | Method | Effect |
 |---|---|---|
-| 1. Completeness filter | Programmatic | `completeness_score() < 2` |
-| 2. Logical validation | LLM | Location/city mismatch, invalid phone, unrelated business name |
-| 3. Semantic dedup | LLM | Same real-world business as another candidate |
+| 1. Completeness ranking | Programmatic | Sorts by `completeness_score()`, then rating; keeps the top 10. Sparse profiles are not hard-rejected. |
+| 2. Logical validation | LLM | Drops location/city mismatch, invalid Nigerian phone, unrelated business name. Keeps when in doubt. |
+| 3. Semantic dedup | LLM | Keeps one candidate per real-world business (same name variant, phone, or address). |
 
 If candidates reach 0 after any step: `synthesis_reason = "failed_validation"`, exit to Node 5.
 
@@ -192,6 +196,8 @@ If candidates reach 0 after any step: `synthesis_reason = "failed_validation"`, 
 
 ### 5.4 Node 5 — Ranking & Synthesis
 
+**Output size:** up to `TOP_N = 10` candidates.
+
 **Ranking criteria (applied in order):**
 1. Profile completeness — more fields filled = higher rank
 2. Budget alignment — LOW budget prefers LOW/MID price_signal
@@ -199,6 +205,8 @@ If candidates reach 0 after any step: `synthesis_reason = "failed_validation"`, 
 4. Location proximity — area match preferred over city-only match
 
 The LLM ranks against these explicit criteria. Its reasoning per candidate becomes the `evidence` field on the `RawCandidate`. The overall rationale becomes `summary`.
+
+**Fallback:** if the LLM call fails or returns no matching names, candidates are ranked deterministically by completeness score and rating, with a generic evidence note.
 
 **No-result messages** (by `synthesis_reason`):
 - `not_found` — nothing returned from tool search
@@ -258,7 +266,7 @@ INFO  ============================================================
 INFO  NODE 3 | Tool Orchestration
 INFO    [Tier 1] Primary search: 'plumber Lekki Lagos'
 INFO    [Tier 1] Primary returned 4 candidates
-INFO    [Tier 1] Quality gate failed — running fallback
+INFO    [Tier 1] Below target — running fallback
 INFO  ROUTE | orchestrate_tools -> cleanup
 ```
 
@@ -268,7 +276,7 @@ Stored to file for post-run inspection. Covers:
 - Full tool input parameters and raw API response per call
 - Exception tracebacks
 
-**Status:** Planned. Will be added to `ToolOrchestrationNode` and LLM calls in `IntentResolutionNode`, `CleanupNode`, and `RankingSynthesisNode` once tool normalisation is finalised.
+**Status:** Not implemented. Only terminal INFO logging (`logging.basicConfig(level=INFO)` in `app.py`) exists today.
 
 ---
 
@@ -316,7 +324,9 @@ The following are intentionally out of scope for the current phase and will be a
 | Intent resolution failure edge | Requires stable core first |
 | Loop / recovery path (0 candidates after cleanup → retry with wider params) | Future improvement |
 | Map search tool integration (`map_search_tool`) | Circling back later |
-| File-based DEBUG logging | Pending finalisation of tool normalisation |
+| File-based DEBUG logging | Not started |
+| Re-enable lat/lng biasing and use `fallback_query` in fallback search | See known issues in 5.2 |
+| Price signal (`price_signal`) | Field is vague; consider a numeric range or removing it |
 | Database-backed job storage | In-memory dict sufficient for MVP |
 
 ---
@@ -325,16 +335,14 @@ The following are intentionally out of scope for the current phase and will be a
 
 | Component | Status |
 |---|---|
-| FormConfig schema | Done |
-| RawCandidate schema | Done |
-| IntentAndSearchParams schema | Done |
-| AgentState | Done |
+| FormConfig, RawCandidate, IntentAndSearchParams, AgentState | Done |
 | Node 1+2: IntentResolutionNode | Done |
-| Node 3: ToolOrchestrationNode | Partially done — tool field mapping needs update after real API inspection |
+| Node 3: ToolOrchestrationNode | Done, with the known issues in 5.2 |
 | Node 4: CleanupNode | Done |
 | Node 5: RankingSynthesisNode | Done |
 | graph.py (LangGraph wiring) | Done |
-| FastAPI backend (app.py) | Done |
+| FastAPI backend (app.py), including `mock` mode | Done |
 | Frontend (index.html) | Done |
-| Tool output schema test (tests/test_tools.py) | In progress |
-| Deep file logging | Pending |
+| Tool output schema script (`test_tools.py`) | Done (manual script) |
+| Automated tests | Not started; several scripts in `tests/` reference removed modules |
+| Deep file logging | Not started |

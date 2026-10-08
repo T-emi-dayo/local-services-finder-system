@@ -1,3 +1,5 @@
+> **Status note (2026-10-08):** This file is the original brainstorm of candidate tools. What is implemented is narrower: the graph uses only three RapidAPI Local Business Search tools (`search_local_businesses`, `get_business_details`, `get_business_reviews`). See `docs/ai_system_architecture_design.md` section 5.2. Items below (WhatsApp, Nairaland, directories, validators) are not built.
+
 High-Priority Tools
 1. Google Maps API / Places API
 

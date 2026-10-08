@@ -25,6 +25,7 @@ from src.tools.review_checking_tool import get_business_reviews
 logger = logging.getLogger(__name__)
 
 TARGET_CANDIDATES = 10
+ENRICH_LIMIT = 5
 
 
 # ── Normalization ────────────────────────────────────────────────────────────
@@ -205,7 +206,7 @@ def orchestrate_tools(state: AgentState) -> AgentState:
         logger.info("NODE 3 | Complete")
         return state
 
-    candidates = _best_candidates(candidates)
+    candidates = _best_candidates(candidates, limit=ENRICH_LIMIT)
 
     # Tier 2: enrich
     logger.info(f"  [Tier 2] Enriching {len(candidates)} candidates via details + reviews tools")
