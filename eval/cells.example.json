@@ -1,0 +1,10 @@
+[
+  {"service": "electrician", "city": "Lagos", "area": "Yaba"},
+  {"service": "plumber", "city": "Lagos", "area": "Yaba"},
+  {"service": "mechanic", "city": "Lagos", "area": "Yaba"},
+  {"service": "salon", "city": "Lagos", "area": "Yaba"},
+  {"service": "electrician", "city": "Lagos", "area": "Lekki"},
+  {"service": "plumber", "city": "Lagos", "area": "Lekki"},
+  {"service": "mechanic", "city": "Lagos", "area": "Lekki"},
+  {"service": "salon", "city": "Lagos", "area": "Lekki"}
+]
